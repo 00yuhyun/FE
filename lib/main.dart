@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'text',
       ),
-      home: AppfirstPages(), // 첫 페이지를 AppfirstPages로 설정
+      home: AppfirstPages(), // 첫 페이지를 AppfirstPages로 설정x
       routes: {
         '/firstApp': (context) => AppfirstPages(),
       },

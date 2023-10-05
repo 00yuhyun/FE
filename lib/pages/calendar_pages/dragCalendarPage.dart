@@ -2,6 +2,21 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
+// 백엔드와 연동하기 위해 import
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import 'resultCalendarPage.dart';
+void main() {
+  runApp(MaterialApp(
+    home: Scaffold(
+      appBar: AppBar(
+        title: Text('Draggable Calendar'),
+      ),
+      body: DragCalendarPage(selectedDay: DateTime.now()),
+    ),
+  ));
+}
 
 class DragCalendarPage extends StatefulWidget {
   final DateTime selectedDay;
@@ -14,15 +29,38 @@ class DragCalendarPage extends StatefulWidget {
 
 class _DragCalendarPageState extends State<DragCalendarPage> {
   final Set<int> selectedIndexes = Set<int>();
-  final Set<int> selectedIndexes_Sun = Set<int>.from([9, 17, 25, 33, 41, 49, 57, 65, 73, 81, 89, 97, 105, 113, 121, 129, 137, 145, 153, 161, 169]);
-  final Set<int> selectedIndexes_Mon = Set<int>.from([10, 18, 26, 34, 42, 50, 58, 66, 74, 82, 90, 98, 106, 114, 122, 130, 138, 146, 154, 162, 170]);
-  final Set<int> selectedIndexes_Tue = Set<int>.from([11, 19, 27, 35, 43, 51, 59, 67, 75, 83, 91, 99, 107, 115, 123, 131, 139, 147, 155, 163, 171]);
-  final Set<int> selectedIndexes_Wed = Set<int>.from([12, 20, 28, 36, 44, 52, 60, 68, 76, 84, 92, 100, 108, 116, 124, 132, 140, 148, 156, 164, 172]);
-  final Set<int> selectedIndexes_Thu = Set<int>.from([13, 21, 29, 37, 45, 53, 61, 69, 77, 85, 93, 101, 109, 117, 125, 133, 141, 149, 157, 165, 173]);
-  final Set<int> selectedIndexes_Fri = Set<int>.from([14, 22, 30, 38, 46, 54, 62, 70, 78, 86, 94, 102, 110, 118, 126, 134, 142, 150, 158, 166, 174]);
-  final Set<int> selectedIndexes_Sat = Set<int>.from([15, 23, 31, 39, 47, 55, 63, 71, 79, 87, 95, 103, 111, 119, 127, 135, 143, 151, 159, 167, 175]);
   final key = GlobalKey();
   final Set<_Foo> _trackTaped = Set<_Foo>();
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//백엔드와 연동하는 부분
+  Future<void> registerUser() async {
+  final apiUrl = '34.64.52.102:8080/availableScheduleList/{groupId}/{sheduleId}'; // 백엔드 API URL
+  final requestBody = {
+    'email': 'user@example.com',
+    'password': 'password123',
+    // 다른 필요한 데이터도 추가할 수 있음
+  };
+
+  final response = await http.post(
+    Uri.parse(apiUrl),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode(requestBody),
+  );
+
+  if (response.statusCode == 200) {
+    // 회원 가입 성공
+    final responseData = jsonDecode(response.body);
+    // 응답 데이터를 처리하는 로직 추가
+  } else {
+    // 회원 가입 실패 또는 오류 처리
+    final errorMessage = '회원 가입에 실패했습니다.';
+    // 오류 처리 로직 추가
+  }
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
   _detectTapedItem(PointerEvent event) {
     if (event.position != null) {
@@ -144,82 +182,100 @@ class _DragCalendarPageState extends State<DragCalendarPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: _detectTapedItem,
-      onPointerMove: _detectTapedItem,
-      onPointerUp: _clearSelection,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 50.0),
-        child: GridView.builder(
-          key: key,
-          itemCount: 176,
-          physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 8,
-            childAspectRatio: 3,
-            crossAxisSpacing: 0.5,
-            mainAxisSpacing: 0.0,
+    return Column(
+      children: [
+        Container(
+          color: Colors.white,
+        child: Listener(
+          onPointerDown: (PointerDownEvent event) => _detectTapedItem(event),
+          onPointerMove: (PointerMoveEvent event) => _detectTapedItem(event),
+          onPointerUp: (PointerUpEvent event) => _clearSelection(event),
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 50.0),
+            child: GridView.builder(
+              key: key,
+              shrinkWrap: true, // 추가: GridView를 부모 위젯의 크기에 맞게 축소
+              itemCount: 176,
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 8,
+                childAspectRatio: 3,
+                crossAxisSpacing: 0.5,
+                mainAxisSpacing: 0.0,
+              ),
+              itemBuilder: (context, index) {
+                if (index < 8) {
+                  return Container(
+                    alignment: Alignment.center,
+                    color: Colors.blue,
+                    child: Text(
+                      ['', 'SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][index],
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                      ),
+                    ),
+                  );
+                } else if (index % 8 == 0) {
+                  return Container(
+                    alignment: Alignment.center,
+                    color: Colors.blue,
+                    child: Text(
+                      [
+                        '10:00AM',
+                        '10:30AM',
+                        '11:00AM',
+                        '11:30AM',
+                        '12:00PM',
+                        '12:30PM',
+                        '1:00PM',
+                        '1:30PM',
+                        '2:00PM',
+                        '2:30PM',
+                        '3:00PM',
+                        '3:30PM',
+                        '4:00PM',
+                        '4:30PM',
+                        '5:00PM',
+                        '5:30PM',
+                        '6:00PM',
+                        '6:30PM',
+                        '7:00PM',
+                        '7:30PM',
+                        '8:00PM',
+                      ][(index ~/ 8) - 1],
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                      ),
+                    ),
+                  );
+                } else {
+                  return Foo(
+                    index: index,
+                    child: Container(
+                      color: selectedIndexes.contains(index)
+                          ? Colors.green
+                          : Colors.grey,
+                    ),
+                  );
+                }
+              },
+            ),
           ),
-          itemBuilder: (context, index) {
-            if (index < 8) {
-              return Container(
-                alignment: Alignment.center,
-                color: Colors.blue,
-                child: Text(
-                  ['', 'SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][index],
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 8,
-                  ),
-                ),
-              );
-            } else if (index % 8 == 0) {
-              return Container(
-                alignment: Alignment.center,
-                color: Colors.blue,
-                child: Text(
-                  [
-                    '10:00AM',
-                    '10:30AM',
-                    '11:00AM',
-                    '11:30AM',
-                    '12:00PM',
-                    '12:30PM',
-                    '1:00PM',
-                    '1:30PM',
-                    '2:00PM',
-                    '2:30PM',
-                    '3:00PM',
-                    '3:30PM',
-                    '4:00PM',
-                    '4:30PM',
-                    '5:00PM',
-                    '5:30PM',
-                    '6:00PM',
-                    '6:30PM',
-                    '7:00PM',
-                    '7:30PM',
-                    '8:00PM',
-                  ][(index ~/ 8) - 1],
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 8,
-                  ),
-                ),
-              );
-            } else {
-              return Foo(
-                index: index,
-                child: Container(
-                  color: selectedIndexes.contains(index)
-                      ? Colors.green
-                      : Colors.grey,
-                ),
-              );
-            }
-          },
         ),
-      ),
+        ),
+        Container(
+          color: Colors.white,
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.push(
+            context, MaterialPageRoute(builder: (context) => ResultCalendarPage(selectedDay: widget.selectedDay,))); //selectedDay 수정해야함
+          },
+          child: Text('Next'),
+        ),
+        ),
+      ],
     );
   }
 
@@ -250,15 +306,4 @@ class Foo extends SingleChildRenderObjectWidget {
 class _Foo extends RenderProxyBox {
   int index;
   _Foo(this.index);
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: Scaffold(
-      appBar: AppBar(
-        title: Text('Draggable Calendar'),
-      ),
-      body: DragCalendarPage(selectedDay: DateTime.now()),
-    ),
-  ));
 }
